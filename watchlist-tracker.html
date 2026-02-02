@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Watchlist Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #111111;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+            border: 1px solid #1f1f1f;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            border-bottom: 1px solid #1f1f1f;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: #1a1a1a;
+            padding: 20px 30px;
+            border-radius: 12px;
+            border: 1px solid #2a2a2a;
+            transition: all 0.3s ease;
+        }
+
+        .stat:hover {
+            border-color: #14b8a6;
+            transform: translateY(-2px);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.7;
+            margin-top: 5px;
+            color: #9ca3af;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #111111;
+            border-bottom: 1px solid #1f1f1f;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 14px 20px;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background: #1a1a1a;
+            color: #e5e7eb;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #14b8a6;
+            background: #1f1f1f;
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+        }
+
+        .search-box::placeholder {
+            color: #6b7280;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group label {
+            color: #9ca3af;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        select {
+            padding: 10px 15px;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            font-size: 14px;
+            background: #1a1a1a;
+            color: #e5e7eb;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #14b8a6;
+            background: #1f1f1f;
+        }
+
+        select option {
+            background: #1a1a1a;
+            color: #e5e7eb;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(20, 184, 166, 0.5);
+        }
+
+        .btn-secondary {
+            background: #2a2a2a;
+            color: #e5e7eb;
+        }
+
+        .btn-secondary:hover {
+            background: #3a3a3a;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.5);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            padding: 30px;
+            background: #111111;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: #1a1a1a;
+            color: #e5e7eb;
+            padding: 16px 12px;
+            text-align: left;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            transition: all 0.2s;
+            border-bottom: 2px solid #2a2a2a;
+        }
+
+        th:hover {
+            background: #2a2a2a;
+            color: #14b8a6;
+        }
+
+        th.sortable::after {
+            content: ' ⇅';
+            opacity: 0.4;
+            font-size: 0.9em;
+        }
+
+        th.sorted-asc::after {
+            content: ' ↑';
+            opacity: 1;
+            color: #14b8a6;
+        }
+
+        th.sorted-desc::after {
+            content: ' ↓';
+            opacity: 1;
+            color: #14b8a6;
+        }
+
+        td {
+            padding: 16px 12px;
+            border-bottom: 1px solid #1f1f1f;
+            color: #d1d5db;
+        }
+
+        tr {
+            transition: all 0.2s;
+        }
+
+        tr:hover {
+            background: #1a1a1a;
+        }
+
+        tr.watched {
+            opacity: 0.5;
+        }
+
+        tr.watched td {
+            text-decoration: line-through;
+        }
+
+        .checkbox-cell {
+            text-align: center;
+            width: 60px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #14b8a6;
+        }
+
+        .rating-good {
+            color: #34d399;
+            font-weight: 600;
+        }
+
+        .rating-ok {
+            color: #fbbf24;
+            font-weight: 600;
+        }
+
+        .rating-bad {
+            color: #f87171;
+            font-weight: 600;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+            font-size: 18px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid #2a2a2a;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-header {
+            margin-bottom: 25px;
+        }
+
+        .modal-header h2 {
+            color: #e5e7eb;
+            font-size: 1.5em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            font-size: 14px;
+            background: #111111;
+            color: #e5e7eb;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #14b8a6;
+            background: #1a1a1a;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        .action-btn {
+            padding: 8px 12px;
+            border: none;
+            background: #2a2a2a;
+            color: #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #3a3a3a;
+            color: #e5e7eb;
+        }
+
+        .export-info {
+            background: #1a2332;
+            border: 1px solid #2a3f5f;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #93c5fd;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .stats {
+                gap: 15px;
+            }
+
+            .stat {
+                padding: 15px 20px;
+            }
+
+            .control-row {
+                flex-direction: column;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            table {
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 10px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 My Watchlist</h1>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number" id="totalCount">0</div>
+                    <div class="stat-label">Total Titles</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="watchedCount">0</div>
+                    <div class="stat-label">Watched</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="unwatchedCount">0</div>
+                    <div class="stat-label">To Watch</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-row">
+                <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search by title, genre, network, or leads...">
+            </div>
+            <div class="control-row">
+                <div class="filter-group">
+                    <label for="typeFilter">Type:</label>
+                    <select id="typeFilter">
+                        <option value="">All Types</option>
+                    </select>
+
+                    <label for="genreFilter">Genre:</label>
+                    <select id="genreFilter">
+                        <option value="">All Genres</option>
+                    </select>
+
+                    <label for="networkFilter">Network:</label>
+                    <select id="networkFilter">
+                        <option value="">All Networks</option>
+                    </select>
+
+                    <label for="statusFilter">Status:</label>
+                    <select id="statusFilter">
+                        <option value="all">All</option>
+                        <option value="unwatched">Unwatched</option>
+                        <option value="watched">Watched</option>
+                    </select>
+                </div>
+            </div>
+            <div class="control-row">
+                <button class="btn" onclick="openAddModal()">➕ Add Title</button>
+                <button class="btn btn-secondary" onclick="exportData()">💾 Export CSV</button>
+                <button class="btn btn-secondary" onclick="resetData()">🔄 Reload from Sheets</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="watchlistTable">
+                <thead>
+                    <tr>
+                        <th class="checkbox-cell">Watched</th>
+                        <th class="sortable" data-column="title">Title</th>
+                        <th class="sortable" data-column="year">Year</th>
+                        <th class="sortable" data-column="type">Type</th>
+                        <th class="sortable" data-column="genre">Genre</th>
+                        <th class="sortable" data-column="network">Network</th>
+                        <th class="sortable" data-column="imdb">IMDb</th>
+                        <th class="sortable" data-column="tomatometer">🍅</th>
+                        <th class="sortable" data-column="popcornmeter">🍿</th>
+                        <th>Leads</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+            <div id="noResults" class="no-results" style="display: none;">
+                No titles match your search criteria
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Title</h2>
+            </div>
+            <form id="addForm">
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input type="text" id="inputTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Year</label>
+                    <input type="number" id="inputYear" min="1900" max="2030">
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="inputType">
+                        <option value="Movie">Movie</option>
+                        <option value="TV Series">TV Series</option>
+                        <option value="TV Special">TV Special</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Genre</label>
+                    <input type="text" id="inputGenre" placeholder="e.g., Drama/Thriller">
+                </div>
+                <div class="form-group">
+                    <label>Network</label>
+                    <input type="text" id="inputNetwork">
+                </div>
+                <div class="form-group">
+                    <label>IMDb Rating</label>
+                    <input type="number" id="inputIMDb" step="0.1" min="0" max="10">
+                </div>
+                <div class="form-group">
+                    <label>Tomatometer (%)</label>
+                    <input type="text" id="inputTomatometer" placeholder="e.g., 95%">
+                </div>
+                <div class="form-group">
+                    <label>Popcornmeter (%)</label>
+                    <input type="text" id="inputPopcornmeter" placeholder="e.g., 85%">
+                </div>
+                <div class="form-group">
+                    <label>Leads</label>
+                    <input type="text" id="inputLeads" placeholder="Comma-separated names">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+                    <button type="submit" class="btn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+
+        let watchlist = [];
+        let currentSort = { column: null, direction: 'asc' };
+        let editingIndex = null;
+        let isLoading = false;
+
+        // Google Sheets Web App URL
+        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycby05Cpxf5tiN-DgmID8WltVlxoRmQoiquL1oSjfXJw9-mP3184FDPmY0sRLWLMgESFe/exec';
+
+        // Initialize app
+        async function init() {
+            showLoading();
+            try {
+                await loadFromGoogleSheets();
+            } catch (error) {
+                console.error('Error loading from Google Sheets:', error);
+                alert('Failed to load data from Google Sheets. Please check your connection and try again.');
+            }
+            hideLoading();
+            
+            populateFilters();
+            renderTable();
+            updateStats();
+            attachEventListeners();
+        }
+
+        async function loadFromGoogleSheets() {
+            try {
+                const response = await fetch(SHEETS_URL + '?timestamp=' + new Date().getTime());
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                watchlist = data.map(row => ({
+                    title: row.Title || '',
+                    year: row.Year || '',
+                    type: row.Type || '',
+                    genre: row.Genre || '',
+                    network: row.Network || '',
+                    imdb: row.IMDb || '',
+                    tomatometer: row.Tomatometer || '',
+                    popcornmeter: row.Popcornmeter || '',
+                    leads: row.Leads || '',
+                    watched: row.Watched === 'Yes' || row.Watched === true
+                }));
+                
+                console.log('Loaded', watchlist.length, 'items from Google Sheets');
+            } catch (error) {
+                console.error('Error loading from Google Sheets:', error);
+                throw error;
+            }
+        }
+
+        async function saveToGoogleSheets() {
+            if (isLoading) return;
+            
+            try {
+                isLoading = true;
+                showLoading();
+                
+                const dataToSave = watchlist.map(item => ({
+                    Title: item.title,
+                    Year: item.year,
+                    Type: item.type,
+                    Genre: item.genre,
+                    Network: item.network,
+                    IMDb: item.imdb,
+                    Tomatometer: item.tomatometer,
+                    Popcornmeter: item.popcornmeter,
+                    Leads: item.leads,
+                    Watched: item.watched ? 'Yes' : 'No'
+                }));
+                
+                await fetch(SHEETS_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(dataToSave)
+                });
+                
+                console.log('Data saved to Google Sheets');
+                
+                // Wait a moment for Google Sheets to process
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Reload to ensure sync
+                await loadFromGoogleSheets();
+                populateFilters();
+                renderTable();
+                updateStats();
+                
+            } catch (error) {
+                console.error('Error saving to Google Sheets:', error);
+                alert('Failed to save to Google Sheets. Your changes may not be synced.');
+            } finally {
+                isLoading = false;
+                hideLoading();
+            }
+        }
+
+        function showLoading() {
+            const existingLoader = document.getElementById('loadingIndicator');
+            if (!existingLoader) {
+                const loader = document.createElement('div');
+                loader.id = 'loadingIndicator';
+                loader.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    z-index: 10000;
+                    font-weight: 600;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                `;
+                loader.textContent = '🔄 Syncing...';
+                document.body.appendChild(loader);
+            }
+        }
+
+        function hideLoading() {
+            const loader = document.getElementById('loadingIndicator');
+            if (loader) {
+                loader.remove();
+            }
+        }
+
+        async function saveData() {
+            await saveToGoogleSheets();
+        }
+
+        function populateFilters() {
+            const types = [...new Set(watchlist.map(item => item.type))].filter(Boolean).sort();
+            const genres = [...new Set(watchlist.flatMap(item => 
+                item.genre.split('/').map(g => g.trim())
+            ))].filter(Boolean).sort();
+            const networks = [...new Set(watchlist.map(item => item.network))].filter(Boolean).sort();
+
+            populateSelect('typeFilter', types);
+            populateSelect('genreFilter', genres);
+            populateSelect('networkFilter', networks);
+        }
+
+        function populateSelect(id, options) {
+            const select = document.getElementById(id);
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">All ' + id.replace('Filter', '') + 's</option>';
+            options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt;
+                option.textContent = opt;
+                select.appendChild(option);
+            });
+            select.value = currentValue;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const noResults = document.getElementById('noResults');
+            const filtered = getFilteredData();
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                noResults.style.display = 'block';
+                return;
+            }
+
+            noResults.style.display = 'none';
+            tbody.innerHTML = filtered.map((item, index) => {
+                const originalIndex = watchlist.indexOf(item);
+                return `
+                    <tr class="${item.watched ? 'watched' : ''}">
+                        <td class="checkbox-cell">
+                            <input type="checkbox" ${item.watched ? 'checked' : ''} 
+                                   onchange="toggleWatched(${originalIndex})">
+                        </td>
+                        <td><strong>${escapeHtml(item.title)}</strong></td>
+                        <td>${escapeHtml(item.year)}</td>
+                        <td>${escapeHtml(item.type)}</td>
+                        <td>${escapeHtml(item.genre)}</td>
+                        <td>${escapeHtml(item.network)}</td>
+                        <td ${getRatingClass(item.imdb)}>${escapeHtml(item.imdb)}</td>
+                        <td ${getRatingClass(item.tomatometer, true)}>${escapeHtml(item.tomatometer)}</td>
+                        <td ${getRatingClass(item.popcornmeter, true)}>${escapeHtml(item.popcornmeter)}</td>
+                        <td>${escapeHtml(item.leads)}</td>
+                        <td>
+                            <button class="action-btn" onclick="editItem(${originalIndex})">✏️ Edit</button>
+                            <button class="action-btn" onclick="deleteItem(${originalIndex})">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        function getRatingClass(value, isPercent = false) {
+            if (!value || value === 'N/A') return '';
+            
+            let numValue;
+            if (isPercent) {
+                numValue = parseInt(value);
+            } else {
+                numValue = parseFloat(value);
+                numValue = numValue * 10;
+            }
+
+            if (numValue >= 80) return 'class="rating-good"';
+            if (numValue >= 60) return 'class="rating-ok"';
+            return 'class="rating-bad"';
+        }
+
+        function getFilteredData() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            const typeFilter = document.getElementById('typeFilter').value;
+            const genreFilter = document.getElementById('genreFilter').value;
+            const networkFilter = document.getElementById('networkFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            let filtered = watchlist.filter(item => {
+                const matchesSearch = !searchTerm || 
+                    item.title.toLowerCase().includes(searchTerm) ||
+                    item.genre.toLowerCase().includes(searchTerm) ||
+                    item.network.toLowerCase().includes(searchTerm) ||
+                    item.leads.toLowerCase().includes(searchTerm);
+
+                const matchesType = !typeFilter || item.type === typeFilter;
+                const matchesGenre = !genreFilter || item.genre.includes(genreFilter);
+                const matchesNetwork = !networkFilter || item.network === networkFilter;
+                const matchesStatus = statusFilter === 'all' || 
+                    (statusFilter === 'watched' && item.watched) ||
+                    (statusFilter === 'unwatched' && !item.watched);
+
+                return matchesSearch && matchesType && matchesGenre && matchesNetwork && matchesStatus;
+            });
+
+            if (currentSort.column) {
+                filtered.sort((a, b) => {
+                    let aVal = a[currentSort.column];
+                    let bVal = b[currentSort.column];
+
+                    if (currentSort.column === 'year' || currentSort.column === 'imdb') {
+                        aVal = parseFloat(aVal) || 0;
+                        bVal = parseFloat(bVal) || 0;
+                    } else if (currentSort.column === 'tomatometer' || currentSort.column === 'popcornmeter') {
+                        aVal = parseInt(aVal) || 0;
+                        bVal = parseInt(bVal) || 0;
+                    } else {
+                        aVal = String(aVal).toLowerCase();
+                        bVal = String(bVal).toLowerCase();
+                    }
+
+                    if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            return filtered;
+        }
+
+        function updateStats() {
+            const total = watchlist.length;
+            const watched = watchlist.filter(item => item.watched).length;
+            const unwatched = total - watched;
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('watchedCount').textContent = watched;
+            document.getElementById('unwatchedCount').textContent = unwatched;
+        }
+
+        async function toggleWatched(index) {
+            watchlist[index].watched = !watchlist[index].watched;
+            await saveData();
+            renderTable();
+            updateStats();
+        }
+
+        function sortTable(column) {
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+
+            document.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+            });
+
+            const th = document.querySelector(`th[data-column="${column}"]`);
+            if (th) {
+                th.classList.add(`sorted-${currentSort.direction}`);
+            }
+
+            renderTable();
+        }
+
+        function attachEventListeners() {
+            document.getElementById('searchBox').addEventListener('input', renderTable);
+            document.getElementById('typeFilter').addEventListener('change', renderTable);
+            document.getElementById('genreFilter').addEventListener('change', renderTable);
+            document.getElementById('networkFilter').addEventListener('change', renderTable);
+            document.getElementById('statusFilter').addEventListener('change', renderTable);
+
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.addEventListener('click', () => sortTable(th.dataset.column));
+            });
+
+            document.getElementById('addForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await saveItem();
+            });
+        }
+
+        function openAddModal() {
+            editingIndex = null;
+            document.getElementById('modalTitle').textContent = 'Add New Title';
+            document.getElementById('addForm').reset();
+            document.getElementById('addModal').classList.add('active');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.remove('active');
+        }
+
+        function editItem(index) {
+            editingIndex = index;
+            const item = watchlist[index];
+            
+            document.getElementById('modalTitle').textContent = 'Edit Title';
+            document.getElementById('inputTitle').value = item.title;
+            document.getElementById('inputYear').value = item.year;
+            document.getElementById('inputType').value = item.type;
+            document.getElementById('inputGenre').value = item.genre;
+            document.getElementById('inputNetwork').value = item.network;
+            document.getElementById('inputIMDb').value = item.imdb === 'N/A' ? '' : item.imdb;
+            document.getElementById('inputTomatometer').value = item.tomatometer;
+            document.getElementById('inputPopcornmeter').value = item.popcornmeter;
+            document.getElementById('inputLeads').value = item.leads;
+            
+            document.getElementById('addModal').classList.add('active');
+        }
+
+        async function saveItem() {
+            const item = {
+                title: document.getElementById('inputTitle').value,
+                year: document.getElementById('inputYear').value || 'N/A',
+                type: document.getElementById('inputType').value,
+                genre: document.getElementById('inputGenre').value || '',
+                network: document.getElementById('inputNetwork').value || '',
+                imdb: document.getElementById('inputIMDb').value || 'N/A',
+                tomatometer: document.getElementById('inputTomatometer').value || 'N/A',
+                popcornmeter: document.getElementById('inputPopcornmeter').value || 'N/A',
+                leads: document.getElementById('inputLeads').value || '',
+                watched: editingIndex !== null ? watchlist[editingIndex].watched : false
+            };
+
+            if (editingIndex !== null) {
+                watchlist[editingIndex] = item;
+            } else {
+                watchlist.push(item);
+            }
+
+            await saveData();
+            populateFilters();
+            renderTable();
+            updateStats();
+            closeAddModal();
+        }
+
+        async function deleteItem(index) {
+            if (confirm(`Delete "${watchlist[index].title}"?`)) {
+                watchlist.splice(index, 1);
+                await saveData();
+                populateFilters();
+                renderTable();
+                updateStats();
+            }
+        }
+
+        function exportData() {
+            const csv = ['Title,Year,Type,Genre,Network,IMDb,Tomatometer,Popcornmeter,Leads,Watched'];
+            watchlist.forEach(item => {
+                const row = [
+                    `"${item.title}"`,
+                    item.year,
+                    item.type,
+                    `"${item.genre}"`,
+                    `"${item.network}"`,
+                    item.imdb,
+                    item.tomatometer,
+                    item.popcornmeter,
+                    `"${item.leads}"`,
+                    item.watched ? 'Yes' : 'No'
+                ].join(',');
+                csv.push(row);
+            });
+
+            const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `watchlist-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        async function resetData() {
+            if (confirm('Reload all data from Google Sheets? This will discard any unsaved local changes.')) {
+                await loadFromGoogleSheets();
+                populateFilters();
+                renderTable();
+                updateStats();
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('addModal').addEventListener('click', (e) => {
+            if (e.target.id === 'addModal') {
+                closeAddModal();
+            }
+        });
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
