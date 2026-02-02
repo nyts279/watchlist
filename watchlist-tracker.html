@@ -94,6 +94,7 @@
             gap: 15px;
             margin-bottom: 15px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .search-box {
@@ -181,12 +182,64 @@
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         }
 
-        .btn-danger {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        .filter-count {
+            color: #14b8a6;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 20px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            border: 1px solid #2a2a2a;
         }
 
-        .btn-danger:hover {
-            box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.5);
+        .column-toggle-btn {
+            background: #2a2a2a;
+            color: #e5e7eb;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .column-toggle-btn:hover {
+            background: #3a3a3a;
+        }
+
+        .column-selector {
+            display: none;
+            position: absolute;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 10px;
+            z-index: 100;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .column-selector.active {
+            display: block;
+        }
+
+        .column-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            color: #e5e7eb;
+            font-size: 14px;
+        }
+
+        .column-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #14b8a6;
         }
 
         .table-container {
@@ -214,6 +267,7 @@
             z-index: 10;
             transition: all 0.2s;
             border-bottom: 2px solid #2a2a2a;
+            white-space: nowrap;
         }
 
         th:hover {
@@ -288,6 +342,18 @@
             font-weight: 600;
         }
 
+        .wrapped-text {
+            max-width: 300px;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+
+        .leads-text {
+            max-width: 250px;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+
         .no-results {
             text-align: center;
             padding: 60px 20px;
@@ -317,7 +383,7 @@
             background: #1a1a1a;
             padding: 30px;
             border-radius: 16px;
-            max-width: 500px;
+            max-width: 600px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
@@ -347,7 +413,8 @@
         }
 
         .form-group input,
-        .form-group select {
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 12px 16px;
             border: 1px solid #2a2a2a;
@@ -356,10 +423,17 @@
             background: #111111;
             color: #e5e7eb;
             transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
         }
 
         .form-group input:focus,
-        .form-group select:focus {
+        .form-group select:focus,
+        .form-group textarea:focus {
             outline: none;
             border-color: #14b8a6;
             background: #1a1a1a;
@@ -386,16 +460,6 @@
         .action-btn:hover {
             background: #3a3a3a;
             color: #e5e7eb;
-        }
-
-        .export-info {
-            background: #1a2332;
-            border: 1px solid #2a3f5f;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 20px;
-            font-size: 13px;
-            color: #93c5fd;
         }
 
         @media (max-width: 768px) {
@@ -426,6 +490,18 @@
             th, td {
                 padding: 10px 8px;
             }
+
+            .wrapped-text {
+                max-width: 200px;
+            }
+
+            .leads-text {
+                max-width: 150px;
+            }
+        }
+
+        .hidden-column {
+            display: none;
         }
     </style>
 </head>
@@ -451,7 +527,8 @@
 
         <div class="controls">
             <div class="control-row">
-                <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search by title, genre, network, or leads...">
+                <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search by title, genre, network, leads, or logline...">
+                <div class="filter-count" id="filterCount">Showing 0 titles</div>
             </div>
             <div class="control-row">
                 <div class="filter-group">
@@ -470,6 +547,16 @@
                         <option value="">All Networks</option>
                     </select>
 
+                    <label for="seasonsFilter">Seasons:</label>
+                    <select id="seasonsFilter">
+                        <option value="">All</option>
+                    </select>
+
+                    <label for="languageFilter">Language:</label>
+                    <select id="languageFilter">
+                        <option value="">All Languages</option>
+                    </select>
+
                     <label for="statusFilter">Status:</label>
                     <select id="statusFilter">
                         <option value="all">All</option>
@@ -482,13 +569,17 @@
                 <button class="btn" onclick="openAddModal()">➕ Add Title</button>
                 <button class="btn btn-secondary" onclick="exportData()">💾 Export CSV</button>
                 <button class="btn btn-secondary" onclick="resetData()">🔄 Reload from Sheets</button>
+                <div style="position: relative;">
+                    <button class="column-toggle-btn" onclick="toggleColumnSelector()">👁️ Show/Hide Columns</button>
+                    <div id="columnSelector" class="column-selector"></div>
+                </div>
             </div>
         </div>
 
         <div class="table-container">
             <table id="watchlistTable">
                 <thead>
-                    <tr>
+                    <tr id="tableHeader">
                         <th class="checkbox-cell">Watched</th>
                         <th class="sortable" data-column="title">Title</th>
                         <th class="sortable" data-column="year">Year</th>
@@ -498,7 +589,11 @@
                         <th class="sortable" data-column="imdb">IMDb</th>
                         <th class="sortable" data-column="tomatometer">🍅</th>
                         <th class="sortable" data-column="popcornmeter">🍿</th>
-                        <th>Leads</th>
+                        <th data-column="leads">Leads</th>
+                        <th data-column="logline">Logline</th>
+                        <th class="sortable" data-column="runtime">Runtime</th>
+                        <th class="sortable" data-column="seasons">Seasons</th>
+                        <th class="sortable" data-column="language">Language</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -530,8 +625,7 @@
                     <label>Type</label>
                     <select id="inputType">
                         <option value="Movie">Movie</option>
-                        <option value="TV Series">TV Series</option>
-                        <option value="TV Special">TV Special</option>
+                        <option value="TV">TV</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -547,16 +641,32 @@
                     <input type="number" id="inputIMDb" step="0.1" min="0" max="10">
                 </div>
                 <div class="form-group">
-                    <label>Tomatometer (%)</label>
-                    <input type="text" id="inputTomatometer" placeholder="e.g., 95%">
+                    <label>Tomatometer (0-1)</label>
+                    <input type="number" id="inputTomatometer" step="0.01" min="0" max="1" placeholder="e.g., 0.95">
                 </div>
                 <div class="form-group">
-                    <label>Popcornmeter (%)</label>
-                    <input type="text" id="inputPopcornmeter" placeholder="e.g., 85%">
+                    <label>Popcornmeter (0-1)</label>
+                    <input type="number" id="inputPopcornmeter" step="0.01" min="0" max="1" placeholder="e.g., 0.85">
                 </div>
                 <div class="form-group">
                     <label>Leads</label>
                     <input type="text" id="inputLeads" placeholder="Comma-separated names">
+                </div>
+                <div class="form-group">
+                    <label>Logline</label>
+                    <textarea id="inputLogline" placeholder="Brief description of the plot"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Runtime</label>
+                    <input type="text" id="inputRuntime" placeholder="e.g., 2h 15m or 8 episodes">
+                </div>
+                <div class="form-group">
+                    <label>Seasons</label>
+                    <input type="number" id="inputSeasons" min="0" placeholder="0 for movies">
+                </div>
+                <div class="form-group">
+                    <label>Language</label>
+                    <input type="text" id="inputLanguage" placeholder="e.g., English">
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
@@ -567,14 +677,14 @@
     </div>
 
     <script>
+        // Google Sheets Web App URL
+        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycby05Cpxf5tiN-DgmID8WltVlxoRmQoiquL1oSjfXJw9-mP3184FDPmY0sRLWLMgESFe/exec';
 
         let watchlist = [];
         let currentSort = { column: null, direction: 'asc' };
         let editingIndex = null;
         let isLoading = false;
-
-        // Google Sheets Web App URL
-        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycby05Cpxf5tiN-DgmID8WltVlxoRmQoiquL1oSjfXJw9-mP3184FDPmY0sRLWLMgESFe/exec';
+        let hiddenColumns = new Set();
 
         // Initialize app
         async function init() {
@@ -588,6 +698,7 @@
             hideLoading();
             
             populateFilters();
+            initializeColumnSelector();
             renderTable();
             updateStats();
             attachEventListeners();
@@ -613,6 +724,10 @@
                     tomatometer: row.Tomatometer || '',
                     popcornmeter: row.Popcornmeter || '',
                     leads: row.Leads || '',
+                    logline: row.Logline || '',
+                    runtime: row.Runtime || '',
+                    seasons: row.Seasons !== undefined ? row.Seasons : '',
+                    language: row.Language || '',
                     watched: row.Watched === 'Yes' || row.Watched === true
                 }));
                 
@@ -640,6 +755,10 @@
                     Tomatometer: item.tomatometer,
                     Popcornmeter: item.popcornmeter,
                     Leads: item.leads,
+                    Logline: item.logline,
+                    Runtime: item.runtime,
+                    Seasons: item.seasons,
+                    Language: item.language,
                     Watched: item.watched ? 'Yes' : 'No'
                 }));
                 
@@ -705,22 +824,66 @@
             await saveToGoogleSheets();
         }
 
+        function initializeColumnSelector() {
+            const columns = [
+                { name: 'Year', key: 'year' },
+                { name: 'Type', key: 'type' },
+                { name: 'Genre', key: 'genre' },
+                { name: 'Network', key: 'network' },
+                { name: 'IMDb', key: 'imdb' },
+                { name: 'Tomatometer', key: 'tomatometer' },
+                { name: 'Popcornmeter', key: 'popcornmeter' },
+                { name: 'Leads', key: 'leads' },
+                { name: 'Logline', key: 'logline' },
+                { name: 'Runtime', key: 'runtime' },
+                { name: 'Seasons', key: 'seasons' },
+                { name: 'Language', key: 'language' }
+            ];
+
+            const selector = document.getElementById('columnSelector');
+            selector.innerHTML = columns.map(col => `
+                <div class="column-option">
+                    <input type="checkbox" id="col-${col.key}" value="${col.key}" checked onchange="toggleColumn('${col.key}')">
+                    <label for="col-${col.key}">${col.name}</label>
+                </div>
+            `).join('');
+        }
+
+        function toggleColumnSelector() {
+            const selector = document.getElementById('columnSelector');
+            selector.classList.toggle('active');
+        }
+
+        function toggleColumn(columnKey) {
+            if (hiddenColumns.has(columnKey)) {
+                hiddenColumns.delete(columnKey);
+            } else {
+                hiddenColumns.add(columnKey);
+            }
+            renderTable();
+        }
+
         function populateFilters() {
             const types = [...new Set(watchlist.map(item => item.type))].filter(Boolean).sort();
             const genres = [...new Set(watchlist.flatMap(item => 
                 item.genre.split('/').map(g => g.trim())
             ))].filter(Boolean).sort();
             const networks = [...new Set(watchlist.map(item => item.network))].filter(Boolean).sort();
+            const seasons = [...new Set(watchlist.map(item => item.seasons))].filter(s => s !== '').sort((a, b) => a - b);
+            const languages = [...new Set(watchlist.map(item => item.language))].filter(Boolean).sort();
 
             populateSelect('typeFilter', types);
             populateSelect('genreFilter', genres);
             populateSelect('networkFilter', networks);
+            populateSelect('seasonsFilter', seasons);
+            populateSelect('languageFilter', languages);
         }
 
         function populateSelect(id, options) {
             const select = document.getElementById(id);
             const currentValue = select.value;
-            select.innerHTML = '<option value="">All ' + id.replace('Filter', '') + 's</option>';
+            const firstOption = select.options[0].text;
+            select.innerHTML = `<option value="">${firstOption}</option>`;
             options.forEach(opt => {
                 const option = document.createElement('option');
                 option.value = opt;
@@ -735,6 +898,9 @@
             const noResults = document.getElementById('noResults');
             const filtered = getFilteredData();
 
+            // Update filter count
+            document.getElementById('filterCount').textContent = `Showing ${filtered.length} title${filtered.length !== 1 ? 's' : ''}`;
+
             if (filtered.length === 0) {
                 tbody.innerHTML = '';
                 noResults.style.display = 'block';
@@ -742,6 +908,18 @@
             }
 
             noResults.style.display = 'none';
+            
+            // Apply hidden columns to headers
+            const headers = document.querySelectorAll('#tableHeader th[data-column]');
+            headers.forEach(th => {
+                const col = th.dataset.column;
+                if (hiddenColumns.has(col)) {
+                    th.classList.add('hidden-column');
+                } else {
+                    th.classList.remove('hidden-column');
+                }
+            });
+
             tbody.innerHTML = filtered.map((item, index) => {
                 const originalIndex = watchlist.indexOf(item);
                 return `
@@ -751,14 +929,18 @@
                                    onchange="toggleWatched(${originalIndex})">
                         </td>
                         <td><strong>${escapeHtml(item.title)}</strong></td>
-                        <td>${escapeHtml(item.year)}</td>
-                        <td>${escapeHtml(item.type)}</td>
-                        <td>${escapeHtml(item.genre)}</td>
-                        <td>${escapeHtml(item.network)}</td>
-                        <td ${getRatingClass(item.imdb)}>${escapeHtml(item.imdb)}</td>
-                        <td ${getRatingClass(item.tomatometer, true)}>${escapeHtml(item.tomatometer)}</td>
-                        <td ${getRatingClass(item.popcornmeter, true)}>${escapeHtml(item.popcornmeter)}</td>
-                        <td>${escapeHtml(item.leads)}</td>
+                        <td class="${hiddenColumns.has('year') ? 'hidden-column' : ''}">${escapeHtml(item.year)}</td>
+                        <td class="${hiddenColumns.has('type') ? 'hidden-column' : ''}">${escapeHtml(item.type)}</td>
+                        <td class="${hiddenColumns.has('genre') ? 'hidden-column' : ''}">${escapeHtml(item.genre)}</td>
+                        <td class="${hiddenColumns.has('network') ? 'hidden-column' : ''}">${escapeHtml(item.network)}</td>
+                        <td class="${hiddenColumns.has('imdb') ? 'hidden-column' : ''} ${getRatingClass(item.imdb)}">${escapeHtml(item.imdb)}</td>
+                        <td class="${hiddenColumns.has('tomatometer') ? 'hidden-column' : ''} ${getPercentRatingClass(item.tomatometer)}">${formatPercent(item.tomatometer)}</td>
+                        <td class="${hiddenColumns.has('popcornmeter') ? 'hidden-column' : ''} ${getPercentRatingClass(item.popcornmeter)}">${formatPercent(item.popcornmeter)}</td>
+                        <td class="${hiddenColumns.has('leads') ? 'hidden-column' : ''} leads-text">${escapeHtml(item.leads)}</td>
+                        <td class="${hiddenColumns.has('logline') ? 'hidden-column' : ''} wrapped-text">${escapeHtml(item.logline)}</td>
+                        <td class="${hiddenColumns.has('runtime') ? 'hidden-column' : ''}">${escapeHtml(item.runtime)}</td>
+                        <td class="${hiddenColumns.has('seasons') ? 'hidden-column' : ''}">${escapeHtml(item.seasons)}</td>
+                        <td class="${hiddenColumns.has('language') ? 'hidden-column' : ''}">${escapeHtml(item.language)}</td>
                         <td>
                             <button class="action-btn" onclick="editItem(${originalIndex})">✏️ Edit</button>
                             <button class="action-btn" onclick="deleteItem(${originalIndex})">🗑️</button>
@@ -768,26 +950,33 @@
             }).join('');
         }
 
+        function formatPercent(value) {
+            if (!value || value === 'N/A') return 'N/A';
+            const num = parseFloat(value);
+            if (isNaN(num)) return 'N/A';
+            return Math.round(num * 100) + '%';
+        }
+
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text || '';
             return div.innerHTML;
         }
 
-        function getRatingClass(value, isPercent = false) {
+        function getRatingClass(value) {
             if (!value || value === 'N/A') return '';
-            
-            let numValue;
-            if (isPercent) {
-                numValue = parseInt(value);
-            } else {
-                numValue = parseFloat(value);
-                numValue = numValue * 10;
-            }
+            const numValue = parseFloat(value) * 10;
+            if (numValue >= 80) return 'rating-good';
+            if (numValue >= 60) return 'rating-ok';
+            return 'rating-bad';
+        }
 
-            if (numValue >= 80) return 'class="rating-good"';
-            if (numValue >= 60) return 'class="rating-ok"';
-            return 'class="rating-bad"';
+        function getPercentRatingClass(value) {
+            if (!value || value === 'N/A') return '';
+            const numValue = parseFloat(value) * 100;
+            if (numValue >= 80) return 'rating-good';
+            if (numValue >= 60) return 'rating-ok';
+            return 'rating-bad';
         }
 
         function getFilteredData() {
@@ -795,6 +984,8 @@
             const typeFilter = document.getElementById('typeFilter').value;
             const genreFilter = document.getElementById('genreFilter').value;
             const networkFilter = document.getElementById('networkFilter').value;
+            const seasonsFilter = document.getElementById('seasonsFilter').value;
+            const languageFilter = document.getElementById('languageFilter').value;
             const statusFilter = document.getElementById('statusFilter').value;
 
             let filtered = watchlist.filter(item => {
@@ -802,16 +993,20 @@
                     item.title.toLowerCase().includes(searchTerm) ||
                     item.genre.toLowerCase().includes(searchTerm) ||
                     item.network.toLowerCase().includes(searchTerm) ||
-                    item.leads.toLowerCase().includes(searchTerm);
+                    item.leads.toLowerCase().includes(searchTerm) ||
+                    item.logline.toLowerCase().includes(searchTerm);
 
                 const matchesType = !typeFilter || item.type === typeFilter;
                 const matchesGenre = !genreFilter || item.genre.includes(genreFilter);
                 const matchesNetwork = !networkFilter || item.network === networkFilter;
+                const matchesSeasons = !seasonsFilter || String(item.seasons) === seasonsFilter;
+                const matchesLanguage = !languageFilter || item.language === languageFilter;
                 const matchesStatus = statusFilter === 'all' || 
                     (statusFilter === 'watched' && item.watched) ||
                     (statusFilter === 'unwatched' && !item.watched);
 
-                return matchesSearch && matchesType && matchesGenre && matchesNetwork && matchesStatus;
+                return matchesSearch && matchesType && matchesGenre && matchesNetwork && 
+                       matchesSeasons && matchesLanguage && matchesStatus;
             });
 
             if (currentSort.column) {
@@ -819,12 +1014,15 @@
                     let aVal = a[currentSort.column];
                     let bVal = b[currentSort.column];
 
-                    if (currentSort.column === 'year' || currentSort.column === 'imdb') {
+                    if (currentSort.column === 'year' || currentSort.column === 'seasons') {
+                        aVal = parseInt(aVal) || 0;
+                        bVal = parseInt(bVal) || 0;
+                    } else if (currentSort.column === 'imdb') {
                         aVal = parseFloat(aVal) || 0;
                         bVal = parseFloat(bVal) || 0;
                     } else if (currentSort.column === 'tomatometer' || currentSort.column === 'popcornmeter') {
-                        aVal = parseInt(aVal) || 0;
-                        bVal = parseInt(bVal) || 0;
+                        aVal = parseFloat(aVal) || 0;
+                        bVal = parseFloat(bVal) || 0;
                     } else {
                         aVal = String(aVal).toLowerCase();
                         bVal = String(bVal).toLowerCase();
@@ -881,6 +1079,8 @@
             document.getElementById('typeFilter').addEventListener('change', renderTable);
             document.getElementById('genreFilter').addEventListener('change', renderTable);
             document.getElementById('networkFilter').addEventListener('change', renderTable);
+            document.getElementById('seasonsFilter').addEventListener('change', renderTable);
+            document.getElementById('languageFilter').addEventListener('change', renderTable);
             document.getElementById('statusFilter').addEventListener('change', renderTable);
 
             document.querySelectorAll('th.sortable').forEach(th => {
@@ -890,6 +1090,15 @@
             document.getElementById('addForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 await saveItem();
+            });
+
+            // Close column selector when clicking outside
+            document.addEventListener('click', (e) => {
+                const selector = document.getElementById('columnSelector');
+                const btn = document.querySelector('.column-toggle-btn');
+                if (!selector.contains(e.target) && e.target !== btn) {
+                    selector.classList.remove('active');
+                }
             });
         }
 
@@ -915,9 +1124,13 @@
             document.getElementById('inputGenre').value = item.genre;
             document.getElementById('inputNetwork').value = item.network;
             document.getElementById('inputIMDb').value = item.imdb === 'N/A' ? '' : item.imdb;
-            document.getElementById('inputTomatometer').value = item.tomatometer;
-            document.getElementById('inputPopcornmeter').value = item.popcornmeter;
+            document.getElementById('inputTomatometer').value = item.tomatometer === 'N/A' ? '' : item.tomatometer;
+            document.getElementById('inputPopcornmeter').value = item.popcornmeter === 'N/A' ? '' : item.popcornmeter;
             document.getElementById('inputLeads').value = item.leads;
+            document.getElementById('inputLogline').value = item.logline;
+            document.getElementById('inputRuntime').value = item.runtime;
+            document.getElementById('inputSeasons').value = item.seasons;
+            document.getElementById('inputLanguage').value = item.language;
             
             document.getElementById('addModal').classList.add('active');
         }
@@ -925,7 +1138,7 @@
         async function saveItem() {
             const item = {
                 title: document.getElementById('inputTitle').value,
-                year: document.getElementById('inputYear').value || 'N/A',
+                year: document.getElementById('inputYear').value || '',
                 type: document.getElementById('inputType').value,
                 genre: document.getElementById('inputGenre').value || '',
                 network: document.getElementById('inputNetwork').value || '',
@@ -933,6 +1146,10 @@
                 tomatometer: document.getElementById('inputTomatometer').value || 'N/A',
                 popcornmeter: document.getElementById('inputPopcornmeter').value || 'N/A',
                 leads: document.getElementById('inputLeads').value || '',
+                logline: document.getElementById('inputLogline').value || '',
+                runtime: document.getElementById('inputRuntime').value || '',
+                seasons: document.getElementById('inputSeasons').value || '',
+                language: document.getElementById('inputLanguage').value || '',
                 watched: editingIndex !== null ? watchlist[editingIndex].watched : false
             };
 
@@ -960,7 +1177,7 @@
         }
 
         function exportData() {
-            const csv = ['Title,Year,Type,Genre,Network,IMDb,Tomatometer,Popcornmeter,Leads,Watched'];
+            const csv = ['Title,Year,Type,Genre,Network,IMDb,Tomatometer,Popcornmeter,Leads,Logline,Runtime,Seasons,Language,Watched'];
             watchlist.forEach(item => {
                 const row = [
                     `"${item.title}"`,
@@ -972,6 +1189,10 @@
                     item.tomatometer,
                     item.popcornmeter,
                     `"${item.leads}"`,
+                    `"${item.logline}"`,
+                    `"${item.runtime}"`,
+                    item.seasons,
+                    item.language,
                     item.watched ? 'Yes' : 'No'
                 ].join(',');
                 csv.push(row);
