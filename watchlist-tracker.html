@@ -532,6 +532,11 @@
             </div>
             <div class="control-row">
                 <div class="filter-group">
+                    <label for="yearFilter">Year:</label>
+                    <select id="yearFilter">
+                        <option value="">All Years</option>
+                    </select>
+
                     <label for="typeFilter">Type:</label>
                     <select id="typeFilter">
                         <option value="">All Types</option>
@@ -681,7 +686,7 @@
         const SHEETS_URL = 'https://script.google.com/macros/s/AKfycby05Cpxf5tiN-DgmID8WltVlxoRmQoiquL1oSjfXJw9-mP3184FDPmY0sRLWLMgESFe/exec';
 
         let watchlist = [];
-        let currentSort = { column: null, direction: 'asc' };
+        let currentSort = { column: 'dateAdded', direction: 'desc' };
         let editingIndex = null;
         let isLoading = false;
         let hiddenColumns = new Set();
@@ -714,7 +719,7 @@
                 
                 const data = await response.json();
                 
-                watchlist = data.map(row => ({
+                watchlist = data.map((row, index) => ({
                     title: row.Title || '',
                     year: row.Year || '',
                     type: row.Type || '',
@@ -728,7 +733,8 @@
                     runtime: row.Runtime || '',
                     seasons: row.Seasons !== undefined ? row.Seasons : '',
                     language: row.Language || '',
-                    watched: row.Watched === 'Yes' || row.Watched === true
+                    watched: row.Watched === 'Yes' || row.Watched === true,
+                    dateAdded: index // Track original position from sheet
                 }));
                 
                 console.log('Loaded', watchlist.length, 'items from Google Sheets');
@@ -864,6 +870,7 @@
         }
 
         function populateFilters() {
+            const years = [...new Set(watchlist.map(item => item.year))].filter(Boolean).sort((a, b) => b - a);
             const types = [...new Set(watchlist.map(item => item.type))].filter(Boolean).sort();
             const genres = [...new Set(watchlist.flatMap(item => 
                 item.genre.split('/').map(g => g.trim())
@@ -872,6 +879,7 @@
             const seasons = [...new Set(watchlist.map(item => item.seasons))].filter(s => s !== '').sort((a, b) => a - b);
             const languages = [...new Set(watchlist.map(item => item.language))].filter(Boolean).sort();
 
+            populateSelect('yearFilter', years);
             populateSelect('typeFilter', types);
             populateSelect('genreFilter', genres);
             populateSelect('networkFilter', networks);
@@ -981,6 +989,7 @@
 
         function getFilteredData() {
             const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            const yearFilter = document.getElementById('yearFilter').value;
             const typeFilter = document.getElementById('typeFilter').value;
             const genreFilter = document.getElementById('genreFilter').value;
             const networkFilter = document.getElementById('networkFilter').value;
@@ -996,6 +1005,7 @@
                     item.leads.toLowerCase().includes(searchTerm) ||
                     item.logline.toLowerCase().includes(searchTerm);
 
+                const matchesYear = !yearFilter || String(item.year) === yearFilter;
                 const matchesType = !typeFilter || item.type === typeFilter;
                 const matchesGenre = !genreFilter || item.genre.includes(genreFilter);
                 const matchesNetwork = !networkFilter || item.network === networkFilter;
@@ -1005,7 +1015,7 @@
                     (statusFilter === 'watched' && item.watched) ||
                     (statusFilter === 'unwatched' && !item.watched);
 
-                return matchesSearch && matchesType && matchesGenre && matchesNetwork && 
+                return matchesSearch && matchesYear && matchesType && matchesGenre && matchesNetwork && 
                        matchesSeasons && matchesLanguage && matchesStatus;
             });
 
@@ -1014,7 +1024,11 @@
                     let aVal = a[currentSort.column];
                     let bVal = b[currentSort.column];
 
-                    if (currentSort.column === 'year' || currentSort.column === 'seasons') {
+                    if (currentSort.column === 'dateAdded') {
+                        // For dateAdded, just use the index values
+                        aVal = a.dateAdded;
+                        bVal = b.dateAdded;
+                    } else if (currentSort.column === 'year' || currentSort.column === 'seasons') {
                         aVal = parseInt(aVal) || 0;
                         bVal = parseInt(bVal) || 0;
                     } else if (currentSort.column === 'imdb') {
@@ -1076,6 +1090,7 @@
 
         function attachEventListeners() {
             document.getElementById('searchBox').addEventListener('input', renderTable);
+            document.getElementById('yearFilter').addEventListener('change', renderTable);
             document.getElementById('typeFilter').addEventListener('change', renderTable);
             document.getElementById('genreFilter').addEventListener('change', renderTable);
             document.getElementById('networkFilter').addEventListener('change', renderTable);
@@ -1150,7 +1165,8 @@
                 runtime: document.getElementById('inputRuntime').value || '',
                 seasons: document.getElementById('inputSeasons').value || '',
                 language: document.getElementById('inputLanguage').value || '',
-                watched: editingIndex !== null ? watchlist[editingIndex].watched : false
+                watched: editingIndex !== null ? watchlist[editingIndex].watched : false,
+                dateAdded: editingIndex !== null ? watchlist[editingIndex].dateAdded : watchlist.length
             };
 
             if (editingIndex !== null) {
